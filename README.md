@@ -110,5 +110,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Contact
 P N Bhargav Teja
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Email: your.email@example.com 
+- GitHub: [@yourusername](https://github.com/Bhargavteja-9779)
+- Email: bhargavteja.pn15@gmail.com
