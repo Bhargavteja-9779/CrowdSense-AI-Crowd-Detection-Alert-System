@@ -1,0 +1,6 @@
+opencv-python>=4.5.0
+cvlib>=0.2.7
+vidgear>=0.2.5
+tensorflow>=2.0.0
+yt_dlp>=2023.0.0
+flask>=2.0.0 

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tirumala Temple Crowd Monitoring</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 20px;
+        }
+        .navbar {
+            background-color: #2d2d2d !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .navbar-brand, .nav-link {
+            color: #ffffff !important;
+        }
+        .video-container {
+            background: #2d2d2d;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .video-feed {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            display: block;
+            border-radius: 5px;
+        }
+        .alert-container {
+            background: #2d2d2d;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .alert-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .alert-item {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #3d3d3d;
+            border: 1px solid #4d4d4d;
+            color: #ff6b6b;
+        }
+        .count-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff00;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .btn-warning {
+            background-color: #ff6b6b;
+            border-color: #ff6b6b;
+            color: #ffffff;
+            margin-top: 10px;
+        }
+        .btn-warning:hover {
+            background-color: #ff5252;
+            border-color: #ff5252;
+            color: #ffffff;
+        }
+        .btn-primary {
+            background-color: #4dabf7;
+            border-color: #4dabf7;
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background-color: #339af0;
+            border-color: #339af0;
+            color: #ffffff;
+        }
+        .threshold-container {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #3d3d3d;
+            border-radius: 5px;
+        }
+        .threshold-label {
+            color: #00ff00;
+            margin-bottom: 10px;
+        }
+        .form-range::-webkit-slider-thumb {
+            background: #00ff00;
+        }
+        .form-range::-moz-range-thumb {
+            background: #00ff00;
+        }
+        .object-counts {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #3d3d3d;
+            border-radius: 5px;
+        }
+        .object-count-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #2d2d2d;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .object-name {
+            color: #ffffff;
+        }
+        .object-count {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        .temple-title {
+            color: #ffd700;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">Tirumala Temple Crowd Monitoring</a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="/alert_page">Alert Page</a>
+                <a class="nav-link" href="/crowd_alert">Register for Alerts</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="video-container">
+                    <h3 class="temple-title">Tirumala Temple Live Feed</h3>
+                    <img src="{{ url_for('video_feed') }}" class="video-feed" alt="Video Feed">
+                    <div class="count-display">
+                        Total Objects: <span id="total-count">0</span>
+                    </div>
+                    
+                    <div class="object-counts">
+                        <h4>Object Counts</h4>
+                        <div id="object-counts-list">
+                            <!-- Object counts will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="alert-container">
+                    <h3 class="mb-4">Alerts</h3>
+                    <div class="alert-list" id="alerts"></div>
+                    
+                    <div class="threshold-container">
+                        <div class="threshold-label">
+                            Alert Threshold: <span id="threshold-value">50</span> people
+                        </div>
+                        <input type="range" class="form-range" id="threshold-slider" min="10" max="200" value="50">
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-warning" onclick="sendWarning('tirumala')">Send Warning</button>
+                        <a href="/alert_page" class="btn btn-primary">Go to Alert Page</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Threshold slider
+        const thresholdSlider = document.getElementById('threshold-slider');
+        const thresholdValue = document.getElementById('threshold-value');
+        
+        thresholdSlider.addEventListener('input', function() {
+            thresholdValue.textContent = this.value;
+        });
+        
+        thresholdSlider.addEventListener('change', function() {
+            // Send the new threshold to the server
+            fetch('/set_threshold', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ threshold: parseInt(this.value) })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Threshold updated successfully');
+                }
+            })
+            .catch(error => console.error('Error updating threshold:', error));
+        });
+
+        function updateCounts() {
+            // Update Tirumala counts
+            fetch('/get_counts/tirumala')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateObjectCountsDisplay(data.counts);
+                    }
+                })
+                .catch(error => console.error('Error updating counts:', error));
+        }
+
+        function updateObjectCountsDisplay(counts) {
+            const countsList = document.getElementById('object-counts-list');
+            countsList.innerHTML = '';
+            
+            let totalCount = 0;
+            
+            for (const [object, count] of Object.entries(counts)) {
+                totalCount += count;
+                
+                const countItem = document.createElement('div');
+                countItem.className = 'object-count-item';
+                
+                const objectName = document.createElement('span');
+                objectName.className = 'object-name';
+                objectName.textContent = object;
+                
+                const objectCount = document.createElement('span');
+                objectCount.className = 'object-count';
+                objectCount.textContent = count;
+                
+                countItem.appendChild(objectName);
+                countItem.appendChild(objectCount);
+                countsList.appendChild(countItem);
+            }
+            
+            document.getElementById('total-count').textContent = totalCount;
+        }
+
+        function updateAlerts() {
+            // Update alerts for Tirumala
+            fetch('/get_alerts/tirumala')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const alertList = document.getElementById('alerts');
+                        alertList.innerHTML = '';
+                        
+                        if (data.alerts && data.alerts.length > 0) {
+                            data.alerts.forEach(alert => {
+                                const alertDiv = document.createElement('div');
+                                alertDiv.className = 'alert-item';
+                                
+                                // Check if alert is an object with structured data
+                                if (typeof alert === 'object') {
+                                    // Create alert content with time and message
+                                    const timeSpan = document.createElement('div');
+                                    timeSpan.style.fontSize = '0.8em';
+                                    timeSpan.style.color = '#aaa';
+                                    timeSpan.textContent = alert.time;
+                                    
+                                    const messageDiv = document.createElement('div');
+                                    messageDiv.textContent = alert.message;
+                                    
+                                    alertDiv.appendChild(timeSpan);
+                                    alertDiv.appendChild(messageDiv);
+                                } else {
+                                    // Handle legacy string alerts
+                                    alertDiv.textContent = alert;
+                                }
+                                
+                                alertList.appendChild(alertDiv);
+                            });
+                        } else {
+                            alertList.innerHTML = '<div class="alert-item">No alerts at this time</div>';
+                        }
+                    }
+                })
+                .catch(error => console.error('Error updating alerts:', error));
+        }
+
+        function sendWarning(location) {
+            fetch(`/send_warning/${location}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateAlerts();
+                }
+            })
+            .catch(error => console.error('Error sending warning:', error));
+        }
+
+        // Update counts and alerts every second
+        setInterval(() => {
+            updateCounts();
+            updateAlerts();
+        }, 1000);
+
+        // Initial update
+        updateCounts();
+        updateAlerts();
+    </script>
+</body>
+</html> 
