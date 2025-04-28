@@ -4,3 +4,4 @@ vidgear>=0.2.5
 tensorflow>=2.0.0
 yt_dlp>=2023.0.0
 flask>=2.0.0 
+gunicorn
