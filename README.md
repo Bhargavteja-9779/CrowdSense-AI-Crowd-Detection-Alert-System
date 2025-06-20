@@ -1,4 +1,4 @@
-# Object Detection and Crowd Monitoring System
+# CrowdSense-AI-Crowd-Detection-Alert-System
 
 ## Author
 **P N Bhargav Teja**
